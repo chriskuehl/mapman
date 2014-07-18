@@ -9,7 +9,12 @@ class Parallel():
     def start(self, func):
         def wrapper():
             func()
-            self.threads.remove(threading.current_thread())
+
+            try:
+                self.threads.remove(threading.current_thread())
+            except ValueError:
+                pass
+
             self.next()
 
         thread = threading.Thread(target=wrapper)
