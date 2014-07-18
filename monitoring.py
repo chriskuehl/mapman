@@ -57,11 +57,28 @@ def create_entities(driver_gen, hostnames):
 
     p.wait()
 
+class Test:
+    pass
+
 def main():
     # prepare driver
     user, api_key = (os.environ.get("RAX_" + key) for key in ("USER", "KEY"))
     driver_gen = lambda: get_driver(user, api_key)
     driver = driver_gen()
+
+    entity = Test()
+    entity.id = "enHLKRlVeg"
+
+    driver.create_check(entity,
+        label="foo",
+        type="remote.tcp",
+        details={"port": 22},
+        monitoring_zones=("mzdfw", "mzord"),
+        target_alias="main"
+    )
+
+
+    return 0
 
     print("deleting...")
     delete_all_entities(driver_gen)
