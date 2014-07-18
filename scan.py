@@ -48,7 +48,7 @@ def get_open_ports(hosts):
         def ok_port(port):
             return tcp[port]["state"] == "open" and port not in IGNORE_PORTS
 
-        return filter(ok_port, tcp)
+        return list(filter(ok_port, tcp))
 
     return {host: open_ports(host) for host in nm.all_hosts()}
 

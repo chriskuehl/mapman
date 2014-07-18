@@ -56,25 +56,20 @@ def create_entities(driver_gen, hostnames):
         def create(hostname=hostname):
             driver = driver_gen()
             create_entity(driver, hostname)
-            print("done: {}".format(hostname))
+            print("- added: {}".format(hostname))
 
         p.start(create)
 
     p.wait()
 
 def create_checks(driver, entity, checks):
-    print("Creating checks for " + entity.label)
-
     for check in checks:
-        print("Creating check: " + check["label"])
         driver.create_check(entity,
             label=check["label"],
             type=check["name"],
             details=check["details"],
             monitoring_zones=DEFAULT_MONITORING_ZONES,
             target_alias="main")
-
-    print("Done creating checks for " + entity.label)
 
 def poc_addall(driver_gen):
     # remove existing entities
