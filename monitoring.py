@@ -2,9 +2,10 @@
 import os
 import socket
 
-import dns.resolver
 import rackspace_monitoring.providers
 import rackspace_monitoring.types
+
+import network
 
 
 def get_driver(user, api_key):
@@ -23,7 +24,7 @@ def delete_all_entities(driver):
 def create_entity(driver, hostname):
     """Creates entity with given hostname and IP."""
     try:
-        ip = get_ip(hostname)
+        ip = network.get_ip(hostname)
     except socket.gaierror:
         raise NameError(
             "Unable to resolve hostname `{}` with IPv4".format(hostname))
@@ -31,23 +32,6 @@ def create_entity(driver, hostname):
     driver.create_entity(
         ip_addresses={"main": ip},
         label=hostname)
-
-def get_reverse_dns(ip, timeout=2):
-    """Returns reverse DNS record for IP, if it exists."""
-    try:
-        socket.setdefaulttimeout(timeout)
-        result = socket.gethostbyaddr(ip)
-    except socket.herror:
-        raise NameError("Unable to resolve IP `{}` to PTR".format(ip))
-
-
-def get_ip(hostname):
-    """Returns IP address for hostname. IPv4 only (for now!)."""
-    try:
-        resp = dns.resolver.query(hostname, "A")
-        return resp[0].address
-    except (dns.resolver.NXDOMAIN, IndexError):
-        return None
 
 
 def main():
