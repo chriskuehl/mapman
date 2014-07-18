@@ -3,6 +3,8 @@ import nmap
 
 import network
 
+IGNORE_PORTS = [111]
+
 def get_hosts(network):
     """Returns a list of hosts on the network. The parameter network is
     CIDR-style network string (e.g. "169.229.10.0/24").
@@ -42,7 +44,11 @@ def get_open_ports(hosts):
     def open_ports(host):
         """Returns list of open ports for given host."""
         tcp = nm[host].get("tcp", {})
-        return filter(lambda port: tcp[port]["state"] == "open", tcp)
+
+        def ok_port(port):
+            return tcp[port]["state"] == "open" and port not in IGNORE_PORTS
+
+        return filter(ok_port, tcp)
 
     return {host: open_ports(host) for host in nm.all_hosts()}
 
