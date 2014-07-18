@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import socket
 
 import rackspace_monitoring.providers
@@ -37,7 +38,7 @@ def get_ip(hostname):
 
 def main():
     # prepare driver
-    user, api_key = 'ckuehl', 'secret'
+    user, api_key = (os.environ.get("RAX_" + key) for key in ("USER", "KEY"))
     driver = get_driver(user, api_key)
 
     delete_all_entities(driver)
