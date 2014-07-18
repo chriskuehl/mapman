@@ -6,9 +6,14 @@ import rackspace_monitoring.base
 import rackspace_monitoring.providers
 import rackspace_monitoring.types
 
+import checks
 import network
 import parallel
 import scan
+
+
+DEFAULT_MONITORING_ZONES = \
+    ("mzdfw", "mzord", "mziad", "mzlon", "mzhkg", "mzsyd")
 
 
 def get_driver(user, api_key):
@@ -57,6 +62,21 @@ def create_entities(driver_gen, hostnames):
 
     p.wait()
 
+def create_checks(driver, entity, checks):
+    print("Creating checks for " + entity.label)
+
+    for check in checks:
+        print("Creating check: " + check["label"])
+        driver.create_check(entity,
+            label=check["label"],
+            type=check["name"],
+            details=check["details"],
+            monitoring_zones=DEFAULT_MONITORING_ZONES,
+            target_alias="main")
+
+    print("Done creating checks for " + entity.label)
+
+
 class Test:
     pass
 
@@ -66,8 +86,13 @@ def main():
     driver_gen = lambda: get_driver(user, api_key)
     driver = driver_gen()
 
-    entity = Test()
-    entity.id = "enHLKRlVeg"
+
+    entity = driver.list_entities()[0]
+    checks_list = checks.get_checks_for_host(entity.label, network.get_ip(entity.label), [22, 80, 443, 999])
+
+    create_checks(driver, entity, checks_list)
+
+    return 0
 
     driver.create_check(entity,
         label="foo",
