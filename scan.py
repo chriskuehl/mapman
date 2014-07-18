@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import nmap
 
+import network
+
 def get_hosts(network):
     """Returns a list of hosts on the network. The parameter network is
     CIDR-style network string (e.g. "169.229.10.0/24").
@@ -35,21 +37,22 @@ def get_open_ports(hosts):
     IP addresses)."""
 
     nm = nmap.PortScanner()
-    nm.scan(", ".join(hosts), arguments="--top-ports 25 -sT")
+    nm.scan(", ".join(hosts), arguments="--top-ports 50 -sT")
 
     def open_ports(host):
         """Returns list of open ports for given host."""
-        tcp = nm[host]["tcp"]
+        tcp = nm[host].get("tcp", {})
         return filter(lambda port: tcp[port]["state"] == "open", tcp)
 
     return {host: open_ports(host) for host in nm.all_hosts()}
 
 
 def main():
-    test_hosts = ["169.229.10.200", "169.229.10.25", "169.229.10.2"]
+    test_hosts = [host["ip"] for host in get_hosts("169.229.10.0/24")]
+    #test_hosts = ["169.229.10.200", "169.229.10.25", "169.229.10.2"]
 
     for host, ports in get_open_ports(test_hosts).items():
-        print("{}: {}".format(host, list(ports)))
+        print("{}: {}".format(network.get_reverse_dns(host), list(ports)))
 
 if __name__ == "__main__":
     main()
