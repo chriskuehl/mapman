@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 from concurrent.futures import ThreadPoolExecutor
+import os
 import socket
 
 import rackspace_monitoring.providers
 import rackspace_monitoring.types
 
 import network
-import parallel
 import scan
 
 
+MAX_WORKERS = 100
 DEFAULT_MONITORING_ZONES = \
     ("mzdfw", "mzord", "mziad", "mzlon", "mzhkg", "mzsyd")
 
@@ -21,44 +22,34 @@ def get_driver(user, api_key):
     return cls(user, api_key)
 
 
-def delete_all_entities(driver_gen):
-    """Deletes all entities from an account."""
-    p = parallel.Parallel()
+def delete_all_entities(driver_gen, max_workers=MAX_WORKERS):
+    """Deletes all entities from the account."""
+    def delete(entity):
+        entity.driver = driver_gen()
+        entity.delete()
 
-    for entity in driver_gen().list_entities():
-        def delete(entity=entity):
-            entity.driver = driver_gen()
-            entity.delete()
-
-        p.start(delete)
-
-    p.wait()
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for entity in driver_gen().list_entities():
+            executor.submit(delete, (entity,))
 
 
 def create_entity(driver, hostname):
-    """Creates entity with given hostname and IP."""
+    """Creates entity with given hostname, returning the new entity."""
     try:
         ip = network.get_ip(hostname)
     except socket.gaierror:
         raise NameError(
             "Unable to resolve hostname `{}` with IPv4".format(hostname))
 
-    driver.create_entity(
+    return driver.create_entity(
         ip_addresses={"main": ip},
         label=hostname)
 
-def create_entities(driver_gen, hostnames):
-    p = parallel.Parallel()
+def create_entities(driver_gen, hostnames, max_workers=MAX_WORKERS):
+    create = lambda hostname: create_entity(driver_gen(), hostname)
 
-    for hostname in hostnames:
-        def create(hostname=hostname):
-            driver = driver_gen()
-            create_entity(driver, hostname)
-            print("- added: {}".format(hostname))
-
-        p.start(create)
-
-    p.wait()
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(executor.map(create, hostnames))
 
 def create_checks(driver, entity, checks):
     for check in checks:
