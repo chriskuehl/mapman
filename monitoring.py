@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from concurrent.futures import ThreadPoolExecutor
 import os
-import socket
 
 import rackspace_monitoring.providers
 import rackspace_monitoring.types
@@ -35,9 +34,9 @@ def delete_all_entities(driver_gen, max_workers=MAX_WORKERS):
 
 def create_entity(driver, hostname):
     """Creates entity with given hostname, returning the new entity."""
-    try:
-        ip = network.get_ip(hostname)
-    except socket.gaierror:
+    ip = network.get_ip(hostname)
+
+    if not ip:
         raise NameError(
             "Unable to resolve hostname `{}` with IPv4".format(hostname))
 
