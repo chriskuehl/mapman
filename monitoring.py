@@ -23,13 +23,11 @@ def get_driver(user, api_key):
 
 def delete_all_entities(driver_gen, max_workers=MAX_WORKERS):
     """Deletes all entities from the account."""
-    def delete(entity):
-        entity.driver = driver_gen()
-        entity.delete()
+    delete = lambda entity: driver_gen().delete_entity(entity)
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for entity in driver_gen().list_entities():
-            executor.submit(delete, (entity,))
+            executor.submit(delete, entity)
 
 
 def create_entity(driver, hostname):
