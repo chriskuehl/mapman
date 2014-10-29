@@ -2,11 +2,11 @@
 
 import json
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 import checks
 import monitoring
 import network
-import parallel
 import scan
 
 def main():
@@ -90,16 +90,14 @@ def main():
     if not confirm("Add these checks automatically?", default=True):
         sys.exit(0)
 
-    p = parallel.Parallel()
+    def create(ip, hostname, checks_list, entity):
+        monitoring.create_checks(driver_gen(), entity, checks_list)
+        print("- created checks: {}".format(hostname))
 
-    for ip, hostname, checks_list, entity in host_checks:
-        def create(ip=ip, hostname=hostname, checks_list=checks_list, entity=entity):
-            monitoring.create_checks(driver_gen(), entity, checks_list)
-            print("- created checks: {}".format(hostname))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for args in host_checks:
+            executor.submit(create, args)
 
-        p.start(create)
-
-    p.wait()
     print("Checks added! Enjoy :-)")
 
 
